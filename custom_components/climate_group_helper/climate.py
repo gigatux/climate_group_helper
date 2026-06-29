@@ -522,7 +522,15 @@ class ClimateGroupHelper(GroupEntity, ClimateEntity, RestoreEntity):
                 await handler.async_setup()
 
         # Update initial state
+        self.async_update_group_state()
         self.async_defer_or_update_ha_state()
+
+        @callback
+        def _startup_refresh(_now: Any) -> None:
+            self.async_update_group_state()
+            self.async_defer_or_update_ha_state()
+
+        self.async_on_remove(async_call_later(self.hass, 15, _startup_refresh))
 
         # Register services
         if self.platform and self.advanced_mode:
@@ -987,6 +995,7 @@ class ClimateGroupHelper(GroupEntity, ClimateEntity, RestoreEntity):
                 context=event.context,
             )
         self.event = event
+        self.async_update_group_state()
         self.async_defer_or_update_ha_state()
 
     @callback
